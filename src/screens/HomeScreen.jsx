@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import MiniChart from '../components/MiniChart';
 import TransactionRow from '../components/TransactionRow';
-import { CURRENCY, DAY_LABELS } from '../data/config';
+import { CURRENCY } from '../data/config';
 import { CATEGORIES } from '../data/config';
 
 function currentMonthLabel() {
@@ -13,6 +13,16 @@ function offsetDate(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return d.toISOString().split('T')[0];
+}
+
+// Build the 7 day labels ending on today, e.g. ['Thu','Fri','Sat','Sun','Mon','Tue','Wed']
+function buildWeekLabels() {
+  const names = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return names[d.getDay()];
+  });
 }
 
 // e.g. "2026-05-13" → "Tuesday, May 13"
@@ -116,7 +126,7 @@ export default function HomeScreen({ data, onDeleteTransaction }) {
 
           <MiniChart
             data={weeklyChartData}
-            labels={DAY_LABELS}
+            labels={buildWeekLabels()}
             activeIndex={selectedDayIndex}
             onBarClick={(i) => setSelectedDayIndex(i)}
           />
