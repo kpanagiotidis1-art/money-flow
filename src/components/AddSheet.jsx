@@ -1,137 +1,124 @@
 import { useState } from 'react';
 import { CATEGORIES, CURRENCY } from '../data/config';
 
-// AddSheet — slides up from the bottom when the user taps +
-// Handles both expenses (with category) and income entries.
-
 export default function AddSheet({ onAddExpense, onAddIncome, onClose }) {
-  const [value, setValue]         = useState('');       // numeric string being built
-  const [type, setType]           = useState('expense'); // 'expense' | 'income'
-  const [category, setCategory]   = useState('food');
-  const [note, setNote]           = useState('');
+  const [value, setValue]       = useState('');
+  const [type, setType]         = useState('expense');
+  const [category, setCategory] = useState('food');
+  const [note, setNote]         = useState('');
 
-  // ── Number pad logic ─────────────────────────────────────────
   function handleKey(key) {
-    if (key === 'del') {
-      setValue((v) => v.slice(0, -1));
-    } else if (key === '.') {
-      if (!value.includes('.')) setValue((v) => v + '.');
-    } else {
-      // Limit to 7 digits total, 2 decimal places
-      if (value.includes('.')) {
-        const decimals = value.split('.')[1];
-        if (decimals?.length >= 2) return;
-      }
-      if (value.replace('.', '').length >= 7) return;
-      setValue((v) => v + key);
-    }
+    if (key === 'del') { setValue(v => v.slice(0, -1)); return; }
+    if (key === '.') { if (!value.includes('.')) setValue(v => v + '.'); return; }
+    if (value.includes('.') && value.split('.')[1]?.length >= 2) return;
+    if (value.replace('.', '').length >= 6) return;
+    setValue(v => v + key);
   }
 
-  // ── Confirm add ──────────────────────────────────────────────
   function handleConfirm() {
     const amount = parseFloat(value);
-    if (!amount || amount <= 0) { onClose(); return; }
-
-    if (type === 'expense') {
-      onAddExpense(amount, category, note);
-    } else {
-      onAddIncome(amount, note);
-    }
+    if (!amount || amount <= 0) return;
+    if (type === 'expense') onAddExpense(amount, category, note);
+    else onAddIncome(amount, note);
     onClose();
   }
 
-  const displayAmount = value ? `${CURRENCY}${value}` : `${CURRENCY}0`;
-
   return (
-    <div className="add-overlay" role="dialog" aria-modal="true" aria-label="Add transaction">
-      {/* Tap backdrop to close */}
-      <div
-        style={{ position: 'absolute', inset: 0 }}
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <>
+      {/* Dark background — pointer-events none so it never catches clicks */}
+      <div style={{
+        position: 'fixed',
+        top: 0, left: 0, right: 0, bottom: 0,
+        zIndex: 9998,
+        background: 'rgba(0,0,0,0.5)',
+        pointerEvents: 'none',
+      }} />
 
-      <div className="add-sheet">
-        <div className="add-sheet-handle" aria-hidden="true" />
+      {/* Sheet — sits above background, catches all its own clicks normally */}
+      <div style={{
+        position: 'fixed',
+        left: 0, right: 0, bottom: 0,
+        zIndex: 9999,
+        background: '#ffffff',
+        borderRadius: '20px 20px 0 0',
+        display: 'flex',
+        flexDirection: 'column',
+        maxHeight: '92vh',
+        overflow: 'hidden',
+      }}>
 
         {/* Header */}
-        <div className="add-sheet-header">
-          <div className="add-sheet-title">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #f0efed' }}>
+          <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: 22, color: '#0a0a0a' }}>
             {type === 'expense' ? 'Add expense' : 'Add income'}
-          </div>
-          <button className="add-close-btn" onClick={onClose} aria-label="Close">×</button>
+          </span>
+          <button
+            onClick={onClose}
+            style={{ background: '#f0efed', border: 'none', borderRadius: '50%', width: 32, height: 32, fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b6966' }}
+          >×</button>
         </div>
 
         {/* Amount display */}
-        <div className="add-amount-display">
-          <div className={`add-amount-number${!value ? ' empty' : ''}`}>
-            {displayAmount}
+        <div style={{ textAlign: 'center', padding: '20px 20px 14px', borderBottom: '1px solid #f0efed' }}>
+          <div style={{ fontFamily: "'DM Serif Display', serif", fontSize: 52, color: value ? '#0a0a0a' : '#e4e3df', lineHeight: 1 }}>
+            {CURRENCY}{value || '0'}
           </div>
-
-          {/* Expense vs Income toggle */}
-          <div className="add-type-toggle">
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 12 }}>
             <button
-              className={`type-btn${type === 'expense' ? ' active' : ''}`}
               onClick={() => setType('expense')}
-            >
-              Expense
-            </button>
+              style={{ padding: '6px 20px', borderRadius: 99, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, background: type === 'expense' ? '#0a0a0a' : '#f0efed', color: type === 'expense' ? '#fff' : '#6b6966' }}
+            >Expense</button>
             <button
-              className={`type-btn${type === 'income' ? ' active' : ''}`}
               onClick={() => setType('income')}
-            >
-              Income
-            </button>
+              style={{ padding: '6px 20px', borderRadius: 99, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 500, background: type === 'income' ? '#0a0a0a' : '#f0efed', color: type === 'income' ? '#fff' : '#6b6966' }}
+            >Income</button>
           </div>
         </div>
 
-        {/* Category selector (only for expenses) */}
+        {/* Categories */}
         {type === 'expense' && (
-          <div className="add-cats" role="group" aria-label="Category">
-            {CATEGORIES.map((cat) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, padding: '12px 14px', borderBottom: '1px solid #f0efed' }}>
+            {CATEGORIES.map(cat => (
               <button
                 key={cat.key}
-                className={`cat-btn${category === cat.key ? ' selected' : ''}`}
                 onClick={() => setCategory(cat.key)}
-                aria-pressed={category === cat.key}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                  padding: '10px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                  background: category === cat.key ? '#0a0a0a' : '#f8f8f7',
+                }}
               >
-                <span className="cat-btn-emoji" aria-hidden="true">{cat.emoji}</span>
-                <span className="cat-btn-label">{cat.label}</span>
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{cat.emoji}</span>
+                <span style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', color: category === cat.key ? 'rgba(255,255,255,0.75)' : '#b0aea8', fontFamily: "'DM Sans', sans-serif" }}>{cat.label}</span>
               </button>
             ))}
           </div>
         )}
 
-        {/* Note input */}
-        <div style={{ padding: '8px 14px 0', borderBottom: '0.5px solid var(--gray-100)' }}>
+        {/* Note */}
+        <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0efed' }}>
           <input
             type="text"
-            placeholder={type === 'expense' ? 'Note (e.g. Lunch)' : 'Source (e.g. Salary)'}
+            placeholder={type === 'expense' ? 'Note — e.g. Lunch' : 'Source — e.g. Salary'}
             value={note}
-            onChange={(e) => setNote(e.target.value)}
-            style={{
-              width: '100%',
-              fontFamily: 'var(--ff)',
-              fontSize: '14px',
-              padding: '10px 12px',
-              borderRadius: 'var(--radius-xs)',
-              border: '0.5px solid var(--gray-200)',
-              background: 'var(--gray-50)',
-              color: 'var(--black)',
-              outline: 'none',
-              marginBottom: '10px',
-            }}
+            onChange={e => setNote(e.target.value)}
+            style={{ width: '100%', fontFamily: "'DM Sans', sans-serif", fontSize: 14, padding: '10px 12px', borderRadius: 10, border: '1px solid #e4e3df', background: '#f8f8f7', color: '#0a0a0a', outline: 'none', boxSizing: 'border-box' }}
           />
         </div>
 
-        {/* Number pad */}
-        <div className="add-numpad" role="group" aria-label="Number pad">
-          {['1','2','3','4','5','6','7','8','9','.','0','del'].map((key) => (
+        {/* Numpad */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+          {['1','2','3','4','5','6','7','8','9','.','0','del'].map(key => (
             <button
               key={key}
-              className={`num-key${key === 'del' ? ' del' : ''}`}
               onClick={() => handleKey(key)}
-              aria-label={key === 'del' ? 'Delete' : key}
+              style={{
+                border: 'none', borderTop: '1px solid #f0efed', borderRight: '1px solid #f0efed',
+                background: '#ffffff', fontSize: key === 'del' ? 18 : 24,
+                fontFamily: "'DM Sans', sans-serif", color: '#0a0a0a',
+                height: 60, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}
             >
               {key === 'del' ? '⌫' : key}
             </button>
@@ -139,10 +126,21 @@ export default function AddSheet({ onAddExpense, onAddIncome, onClose }) {
         </div>
 
         {/* Confirm */}
-        <button className="add-confirm-btn" onClick={handleConfirm}>
-          {type === 'expense' ? 'Add expense' : 'Add income'}
-        </button>
+        <div style={{ padding: '12px 14px 32px' }}>
+          <button
+            onClick={handleConfirm}
+            style={{
+              width: '100%', padding: 17, borderRadius: 14, border: 'none', cursor: 'pointer',
+              background: (value && parseFloat(value) > 0) ? '#0a0a0a' : '#e4e3df',
+              color: '#ffffff', fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500,
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+            }}
+          >
+            {type === 'expense' ? 'Add expense' : 'Add income'}
+          </button>
+        </div>
+
       </div>
-    </div>
+    </>
   );
 }

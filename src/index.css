@@ -59,7 +59,8 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* No overflow:hidden here — it creates a stacking context that clips
+     position:fixed children like AddSheet. Each screen scrolls itself. */
   padding-top: env(safe-area-inset-top);
 }
 
@@ -69,6 +70,13 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: var(--nav-height);
+}
+
+/* Freeze the screen while the add sheet is open so its touch layer
+   does not intercept taps meant for the sheet above it */
+.app-shell.sheet-open .screen {
+  pointer-events: none;
+  overflow: hidden;
 }
 
 .screen-scroll {
