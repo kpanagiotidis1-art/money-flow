@@ -81,9 +81,11 @@ export function useMoneyFlow() {
 
   const netFlow = monthIncome - monthExpenses;
 
-  const subsTotal = data.subscriptions
-    .filter((s) => s.cycle === 'monthly')
-    .reduce((sum, s) => sum + s.amount, 0);
+  const subsTotal = Math.round(data.subscriptions.reduce((sum, s) => {
+    if (s.cycle === 'weekly')  return sum + s.amount * 52 / 12;
+    if (s.cycle === 'annual')  return sum + s.amount / 12;
+    return sum + s.amount; // monthly
+  }, 0));
 
   const todaySpend = data.transactions
     .filter((t) => t.type === 'expense' && t.date === today())
@@ -150,8 +152,8 @@ export function useMoneyFlow() {
     setData((d) => ({ ...d, transactions: d.transactions.filter((t) => t.id !== id) }));
   }, []);
 
-  const addSubscription = useCallback((name, emoji, amount, cycle = 'monthly') => {
-    const sub = { id: uid(), name, emoji, amount: Number(amount), cycle, nextDate: offsetDate(30) };
+  const addSubscription = useCallback((name, emoji, amount, cycle = 'monthly', nextDate = null) => {
+    const sub = { id: uid(), name, emoji, amount: Number(amount), cycle, nextDate: nextDate || offsetDate(30) };
     setData((d) => ({ ...d, subscriptions: [sub, ...d.subscriptions] }));
   }, []);
 
