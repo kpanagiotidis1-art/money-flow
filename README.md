@@ -1,70 +1,72 @@
-# Getting Started with Create React App
+# Money Flow
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A calm, minimalist financial awareness app. Mobile-first, monochrome, intentional.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Setup
 
-### `npm start`
+### 1. Create a new React app (if you haven't yet)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```bash
+npx create-react-app money-flow
+cd money-flow
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 2. Copy these files
 
-### `npm test`
+Replace the contents of `src/` with the files from this project:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```
+src/
+├── index.js                    ← replace the existing one
+├── index.css                   ← replace the existing one
+├── App.jsx                     ← replace App.js with this (or rename)
+├── data/
+│   └── config.js
+├── hooks/
+│   └── useMoneyFlow.js
+├── components/
+│   ├── BottomNav.jsx
+│   ├── AddSheet.jsx
+│   ├── MiniChart.jsx
+│   └── TransactionRow.jsx
+└── screens/
+    ├── HomeScreen.jsx
+    ├── FlowScreen.jsx
+    ├── SubsScreen.jsx
+    └── InsightsScreen.jsx
+```
 
-### `npm run build`
+> If your project has `App.js` instead of `App.jsx`, either rename it or
+> update the import in `index.js` to `import App from './App.jsx'`.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 3. Start the app
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```bash
+npm start
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Your browser will open at http://localhost:3000
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## How the code is structured
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+| File | What it does |
+|------|-------------|
+| `hooks/useMoneyFlow.js` | **All data lives here.** Reads/writes localStorage. Computes totals, trends, insights. |
+| `data/config.js` | Categories, currency symbol, labels. Easy to edit. |
+| `App.jsx` | Root component. Handles which tab is active and whether AddSheet is open. |
+| `screens/` | One file per screen. Each receives `data` from `useMoneyFlow`. |
+| `components/` | Small reusable pieces used across screens. |
+| `index.css` | All styles. Uses CSS variables for easy theming. |
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Adding features later
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- **New category**: add an entry to `CATEGORIES` in `data/config.js`
+- **New screen**: create a file in `screens/`, add a tab to `BottomNav`, add a case in `App.jsx`
+- **Change currency**: update `CURRENCY` in `data/config.js`
+- **Clear all data**: open browser DevTools → Application → Local Storage → delete `moneyflow_v1`
