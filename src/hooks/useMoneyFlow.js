@@ -42,11 +42,36 @@ function buildSeedData() {
   };
 }
 
+// Advance a subscription's nextDate forward by its cycle until it's in the future
+function advanceSubDate(sub) {
+  let next = new Date(sub.nextDate + 'T00:00:00');
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  if (next >= now) return sub; // already in the future, nothing to do
+
+  while (next < now) {
+    if (sub.cycle === 'weekly')  next.setDate(next.getDate() + 7);
+    else if (sub.cycle === 'annual') next.setFullYear(next.getFullYear() + 1);
+    else next.setMonth(next.getMonth() + 1); // monthly
+  }
+
+  return { ...sub, nextDate: next.toISOString().split('T')[0] };
+}
+
 // Load from localStorage, or fall back to fresh seed data
 function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      // Auto-advance any subscriptions whose nextDate has passed
+      const advanced = {
+        ...parsed,
+        subscriptions: parsed.subscriptions.map(advanceSubDate),
+      };
+      return advanced;
+    }
   } catch (_) {}
   return buildSeedData();
 }
