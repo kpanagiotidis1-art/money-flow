@@ -39,7 +39,7 @@ function formatMonthKey(key) {
 }
 
 export default function FlowScreen({ data, onDeleteTransaction }) {
-  const { categoryTotals, transactions, monthTransactions, monthIncome, monthExpenses } = data;
+  const { transactions } = data;
 
   // Which month bar is selected — default is current month (index 4)
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(4);

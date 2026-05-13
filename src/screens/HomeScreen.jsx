@@ -30,7 +30,6 @@ export default function HomeScreen({ data, onDeleteTransaction }) {
   } = data;
 
   // Which day bar is selected (0=6 days ago … 6=today). Default = today.
-  const todayDowIndex = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
   const [selectedDayIndex, setSelectedDayIndex] = useState(6);
 
   const recentTransactions = transactions.slice(0, 5);
