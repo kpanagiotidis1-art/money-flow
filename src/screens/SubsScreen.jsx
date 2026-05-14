@@ -45,11 +45,10 @@ export default function SubsScreen({ data, onDeleteSubscription, onAddSubscripti
     (sum, s) => sum + toMonthlyEquivalent(s.amount, s.cycle), 0
   );
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!formName.trim() || !formAmount) return;
-    // Default next date to today if none picked
     const nextDate = formDate || new Date().toISOString().split('T')[0];
-    onAddSubscription(
+    await onAddSubscription(
       formName.trim(),
       formEmoji.trim() || '📦',
       parseFloat(formAmount),
@@ -200,7 +199,7 @@ export default function SubsScreen({ data, onDeleteSubscription, onAddSubscripti
                   type="date"
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
-                  style={{ width: '100%', fontFamily: 'var(--ff)', fontSize: 14, padding: '10px 12px', borderRadius: 'var(--radius-xs)', border: '0.5px solid var(--gray-200)', background: 'var(--gray-50)', color: 'var(--black)', outline: 'none' }}
+                  style={{ width: '100%', fontFamily: 'var(--ff)', fontSize: 16, padding: '10px 12px', borderRadius: 'var(--radius-xs)', border: '0.5px solid var(--gray-200)', background: 'var(--gray-50)', color: 'var(--black)', outline: 'none' }}
                 />
               </div>
 
