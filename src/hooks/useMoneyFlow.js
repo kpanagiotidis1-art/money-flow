@@ -1,16 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
-// ─────────────────────────────────────────────────────────────
-// useMoneyFlow — all app data, now backed by Supabase.
-//
-// Architecture:
-//   - transactions and subscriptions are fetched from Supabase on mount
-//   - all writes (add/delete) go to Supabase immediately
-//   - local state mirrors the database — UI stays fast and reactive
-//   - localStorage is no longer used for transactions/subscriptions
-// ─────────────────────────────────────────────────────────────
-
 export const today = () => new Date().toISOString().split('T')[0];
 export const yearMonth = (dateStr) => dateStr.slice(0, 7);
 
@@ -26,54 +16,65 @@ function advanceSubDate(sub) {
   now.setHours(0, 0, 0, 0);
   if (next >= now) return sub;
   while (next < now) {
-    if (sub.cycle === 'weekly')       next.setDate(next.getDate() + 7);
-    else if (sub.cycle === 'annual')  next.setFullYear(next.getFullYear() + 1);
-    else                              next.setMonth(next.getMonth() + 1);
+    if (sub.cycle === 'weekly')      next.setDate(next.getDate() + 7);
+    else if (sub.cycle === 'annual') next.setFullYear(next.getFullYear() + 1);
+    else                             next.setMonth(next.getMonth() + 1);
   }
   return { ...sub, next_date: next.toISOString().split('T')[0] };
 }
 
-// ─────────────────────────────────────────────────────────────
 export function useMoneyFlow(userId) {
-  const [transactions,   setTransactions]   = useState([]);
-  const [subscriptions,  setSubscriptions]  = useState([]);
-  const [loading,        setLoading]        = useState(true);
+  const [transactions,  setTransactions]  = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading,       setLoading]       = useState(true);
 
-  // ── Fetch all data on mount (or when user changes) ──────────
+  // ── Fetch on mount ───────────────────────────────────────────
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      console.log('[useMoneyFlow] No userId — skipping fetch');
+      return;
+    }
+    console.log('[useMoneyFlow] Fetching data for user:', userId);
     setLoading(true);
 
     async function fetchAll() {
-      // Fetch transactions — newest first
-      const { data: txData } = await supabase
+      // Transactions
+      const { data: txData, error: txError } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', userId)
         .order('date', { ascending: false });
 
-      // Fetch subscriptions — soonest first
-      const { data: subData } = await supabase
+      if (txError) {
+        console.error('[useMoneyFlow] Error fetching transactions:', txError);
+      } else {
+        console.log('[useMoneyFlow] Fetched transactions:', txData);
+        setTransactions(txData ?? []);
+      }
+
+      // Subscriptions
+      const { data: subData, error: subError } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
         .order('next_date', { ascending: true });
 
-      setTransactions(txData ?? []);
+      if (subError) {
+        console.error('[useMoneyFlow] Error fetching subscriptions:', subError);
+      } else {
+        console.log('[useMoneyFlow] Fetched subscriptions:', subData);
+        const advanced = (subData ?? []).map(advanceSubDate);
+        setSubscriptions(advanced);
 
-      // Auto-advance any stale subscription dates
-      const advanced = (subData ?? []).map(advanceSubDate);
-      setSubscriptions(advanced);
-
-      // If any dates were advanced, save them back to Supabase
-      advanced.forEach(async (sub, i) => {
-        if (sub.next_date !== (subData ?? [])[i]?.next_date) {
-          await supabase
-            .from('subscriptions')
-            .update({ next_date: sub.next_date })
-            .eq('id', sub.id);
-        }
-      });
+        advanced.forEach(async (sub, i) => {
+          if (sub.next_date !== (subData ?? [])[i]?.next_date) {
+            await supabase
+              .from('subscriptions')
+              .update({ next_date: sub.next_date })
+              .eq('id', sub.id);
+          }
+        });
+      }
 
       setLoading(false);
     }
@@ -81,7 +82,7 @@ export function useMoneyFlow(userId) {
     fetchAll();
   }, [userId]);
 
-  // ── Derived values ──────────────────────────────────────────
+  // ── Derived values ───────────────────────────────────────────
   const currentMonth = yearMonth(today());
 
   const monthTransactions = transactions.filter(
@@ -153,7 +154,7 @@ export function useMoneyFlow(userId) {
     ? Math.ceil((new Date(nextSub.next_date) - new Date(today())) / 86400000)
     : null;
 
-  // ── Actions — write to Supabase, then update local state ────
+  // ── Actions ──────────────────────────────────────────────────
 
   const addExpense = useCallback(async (amount, category, note = '') => {
     const row = {
@@ -164,14 +165,15 @@ export function useMoneyFlow(userId) {
       note,
       date: today(),
     };
+    console.log('[addExpense] Inserting:', row);
     const { data, error } = await supabase
       .from('transactions')
       .insert(row)
       .select()
       .single();
-    if (!error && data) {
-      setTransactions((prev) => [data, ...prev]);
-    }
+    console.log('[addExpense] Result — data:', data, 'error:', error);
+    if (error) throw error;
+    if (data) setTransactions((prev) => [data, ...prev]);
   }, [userId]);
 
   const addIncome = useCallback(async (amount, note = '') => {
@@ -183,19 +185,21 @@ export function useMoneyFlow(userId) {
       note,
       date: today(),
     };
+    console.log('[addIncome] Inserting:', row);
     const { data, error } = await supabase
       .from('transactions')
       .insert(row)
       .select()
       .single();
-    if (!error && data) {
-      setTransactions((prev) => [data, ...prev]);
-    }
+    console.log('[addIncome] Result — data:', data, 'error:', error);
+    if (error) throw error;
+    if (data) setTransactions((prev) => [data, ...prev]);
   }, [userId]);
 
   const deleteTransaction = useCallback(async (id) => {
-    await supabase.from('transactions').delete().eq('id', id);
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    console.log('[deleteTransaction] id:', id, 'error:', error);
+    if (!error) setTransactions((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
   const addSubscription = useCallback(async (name, emoji, amount, cycle = 'monthly', nextDate = null) => {
@@ -207,28 +211,27 @@ export function useMoneyFlow(userId) {
       cycle,
       next_date: nextDate || offsetDate(30),
     };
+    console.log('[addSubscription] Inserting:', row);
     const { data, error } = await supabase
       .from('subscriptions')
       .insert(row)
       .select()
       .single();
-    if (!error && data) {
-      setSubscriptions((prev) => [...prev, data]);
-    }
+    console.log('[addSubscription] Result — data:', data, 'error:', error);
+    if (error) throw error;
+    if (data) setSubscriptions((prev) => [...prev, data]);
   }, [userId]);
 
   const deleteSubscription = useCallback(async (id) => {
-    await supabase.from('subscriptions').delete().eq('id', id);
-    setSubscriptions((prev) => prev.filter((s) => s.id !== id));
+    const { error } = await supabase.from('subscriptions').delete().eq('id', id);
+    console.log('[deleteSubscription] id:', id, 'error:', error);
+    if (!error) setSubscriptions((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
   return {
-    // Raw data
     transactions,
     subscriptions,
     loading,
-
-    // Derived totals
     monthIncome,
     monthExpenses,
     netFlow,
@@ -237,19 +240,13 @@ export function useMoneyFlow(userId) {
     weekSpend,
     lastWeekSpend,
     weekChange,
-
-    // Breakdowns
     categoryTotals,
     weekCategoryTotals,
     topCategoryKey,
     weeklyChartData,
     monthTransactions,
-
-    // Subscriptions
     nextSub,
     daysUntilNextSub,
-
-    // Actions
     addExpense,
     addIncome,
     deleteTransaction,
