@@ -55,7 +55,7 @@ export default function App() {
   // ── Logged in — show the app ──────────────────────────────────
   function renderScreen() {
     switch (activeTab) {
-      case 'home':     return <HomeScreen     data={moneyFlow} onDeleteTransaction={moneyFlow.deleteTransaction} />;
+      case 'home':     return <HomeScreen     data={moneyFlow} onDeleteTransaction={moneyFlow.deleteTransaction} onLogout={() => supabase.auth.signOut()} />;
       case 'flow':     return <FlowScreen     data={moneyFlow} onDeleteTransaction={moneyFlow.deleteTransaction} />;
       case 'subs':     return <SubsScreen     data={moneyFlow} onDeleteSubscription={moneyFlow.deleteSubscription} onAddSubscription={moneyFlow.addSubscription} />;
       case 'insights': return <InsightsScreen data={moneyFlow} />;
@@ -71,7 +71,6 @@ export default function App() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onAddPress={() => setShowAdd(true)}
-          onLogout={() => supabase.auth.signOut()}
         />
       </div>
 

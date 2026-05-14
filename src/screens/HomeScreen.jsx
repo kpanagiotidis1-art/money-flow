@@ -32,7 +32,7 @@ function formatFullDate(dateStr) {
   });
 }
 
-export default function HomeScreen({ data, onDeleteTransaction }) {
+export default function HomeScreen({ data, onDeleteTransaction, onLogout }) {
   const {
     monthIncome, monthExpenses, netFlow, subsTotal,
     todaySpend, weekSpend, weekChange,
@@ -63,9 +63,23 @@ export default function HomeScreen({ data, onDeleteTransaction }) {
 
   return (
     <div className="screen fade-slide-in">
-      <div className="page-header">
+      <div className="page-header" style={{ position: 'relative' }}>
         <div className="page-label">{currentMonthLabel()}</div>
         <div className="page-title">Money Flow</div>
+        <button
+          onClick={onLogout}
+          aria-label="Log out"
+          style={{
+            position: 'absolute', top: 16, right: 20,
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--gray-400)', padding: 4, display: 'flex',
+            alignItems: 'center', gap: 5, fontFamily: 'var(--ff)',
+            fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.07em',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Log out
+        </button>
       </div>
 
       <div className="screen-scroll">
