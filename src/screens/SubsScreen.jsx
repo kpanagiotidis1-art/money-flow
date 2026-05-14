@@ -110,16 +110,16 @@ export default function SubsScreen({ data, onDeleteSubscription, onAddSubscripti
             <div className="empty-state">No subscriptions yet — add one below</div>
           ) : (
             [...subscriptions]
-              .sort((a, b) => a.nextDate.localeCompare(b.nextDate))
+              .sort((a, b) => a.next_date.localeCompare(b.next_date))
               .map((sub) => {
-                const days = daysUntil(sub.nextDate);
+                const days = daysUntil(sub.next_date);
                 return (
                   <div key={sub.id} className="sub-row">
                     <div className="sub-logo" aria-hidden="true">{sub.emoji}</div>
                     <div className="sub-info">
                       <div className="sub-name">{sub.name}</div>
                       <div className="sub-cycle">
-                        {cycleLabel(sub.cycle)} · {formatNextDate(sub.nextDate, days)}
+                        {cycleLabel(sub.cycle)} · {formatNextDate(sub.next_date, days)}
                       </div>
                     </div>
                     <div className="sub-amount">
