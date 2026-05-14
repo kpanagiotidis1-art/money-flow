@@ -11,8 +11,6 @@ import { supabase } from '../lib/supabase';
 //   - localStorage is no longer used for transactions/subscriptions
 // ─────────────────────────────────────────────────────────────
 
-const uid = () => Math.random().toString(36).slice(2, 9);
-
 export const today = () => new Date().toISOString().split('T')[0];
 export const yearMonth = (dateStr) => dateStr.slice(0, 7);
 
